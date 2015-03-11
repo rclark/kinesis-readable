@@ -1,5 +1,7 @@
 # kinesis-readable
 
+[![Build Status](https://travis-ci.org/rclark/kinesis-readable.svg?branch=master)](https://travis-ci.org/rclark/kinesis-readable)
+
 Node.js stream interface for reading records from [AWS Kinesis](http://aws.amazon.com/kinesis/).
 
 ## Usage
