@@ -1,0 +1,31 @@
+{
+  "name": "kinesis-readable",
+  "version": "0.0.1",
+  "description": "Simple readable stream client for AWS Kinesis",
+  "main": "index.js",
+  "scripts": {
+    "test": "tape test/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rclark/kinesis-readable.git"
+  },
+  "keywords": [
+    "kinesis",
+    "stream"
+  ],
+  "author": "Ryan Clark",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rclark/kinesis-readable/issues"
+  },
+  "homepage": "https://github.com/rclark/kinesis-readable",
+  "devDependencies": {
+    "kinesalite": "^1.0.3",
+    "queue-async": "^1.0.7",
+    "tape": "^3.5.0"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1.16"
+  }
+}
