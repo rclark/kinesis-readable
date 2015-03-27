@@ -27,7 +27,7 @@ readable
     console.error(err);
   })
   .on('end', function() {
-    consle.log('all done!');
+    console.log('all done!');
   });
 
 // Calling .close() will finish all pending GetRecord requests before emitting
