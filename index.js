@@ -31,20 +31,24 @@ module.exports = function(config) {
     stream.Readable.call(this, { objectMode: true });
   }
 
-  KinesisReadable.prototype.close = function() {
+  KinesisReadable.prototype.close = function(callback) {
+    callback = callback || function() {};
     this.drain = true;
-    if (this.pending) setImmediate(this.close.bind(this));
-    else (this.push(null));
+    if (this.pending) return setImmediate(this.close.bind(this), callback);
+    this.on('end', callback);
+    this.push(null);
+    this.resume();
   };
 
   KinesisReadable.prototype._read = function read() {
     var _this = this;
+    if (_this.drain) return;
     if (!_this.iterator) return _this._describe(haveIterator);
     haveIterator();
 
     function haveIterator(err) {
-      if (err) return _this.emit('error', err);
       if (_this.drain) return;
+      if (err) return _this.emit('error', err);
 
       _this.pending++;
       kinesis.getRecords({
@@ -69,11 +73,13 @@ module.exports = function(config) {
 
   KinesisReadable.prototype._describe = function describe(callback) {
     var _this = this;
+    if (_this.drain) return callback();
 
     _this.kinesis.describeStream({
       StreamName: _this.streamName
     }, function(err, data) {
       if (err) return callback(err);
+      if (_this.drain) return callback();
 
       if (typeof _this.shardId === 'string') {
         var match = data.StreamDescription.Shards.filter(function(shard) {
@@ -92,6 +98,7 @@ module.exports = function(config) {
         StartingSequenceNumber: data.StreamDescription.Shards[0].SequenceNumberRange.StartingSequenceNumber
       }, function(err, data) {
         if (err) return callback(err);
+        if (_this.drain) return callback();
         _this.iterator = data.ShardIterator;
         callback();
       });
