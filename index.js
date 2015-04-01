@@ -28,16 +28,25 @@ module.exports = function(config) {
     this.kinesis = kinesis;
     this.iterator = null;
     this.pending = 0;
+    this._closed = false;
     stream.Readable.call(this, { objectMode: true });
   }
 
   KinesisReadable.prototype.close = function(callback) {
     callback = callback || function() {};
-    this.drain = true;
-    if (this.pending) return setImmediate(this.close.bind(this), callback);
-    this.on('end', callback);
-    this.push(null);
-    this.resume();
+    var _this = this;
+    if (_this._closed) return callback();
+
+    _this.drain = true;
+    if (_this.pending) return setImmediate(_this.close.bind(_this), callback);
+
+    _this.on('end', function() {
+      _this._closed = true;
+      callback();
+    });
+
+    _this.push(null);
+    _this.resume();
   };
 
   KinesisReadable.prototype._read = function read() {
