@@ -121,3 +121,55 @@ test('reads records that are incoming', function(assert) {
     if (err) throw err;
   });
 });
+
+test('reads latest records', function(assert) {
+  var initialRecords = [];
+  var subsequentRecords = [];
+  for (var i = 0; i < 20; i++) {
+    initialRecords.push({
+      Data: crypto.randomBytes(10),
+      PartitionKey: 'key'
+    });
+    subsequentRecords.push({
+      Data: crypto.randomBytes(10),
+      PartitionKey: 'key'
+    });
+  }
+
+  function readRecords() {
+    var readable = new Readable({ latest: true });
+    var count = 0;
+
+    readable
+      .on('data', function(record) {
+        var expected = subsequentRecords[count].Data.toString('hex');
+        assert.equal(record.Data.toString('hex'), expected, 'anticipated data');
+        count++;
+        if (count > subsequentRecords.length) assert.fail('should not read extra records');
+        if (count === subsequentRecords.length) readable.close();
+      })
+      .on('end', function() {
+        assert.end();
+      })
+      .on('error', function(err) {
+        assert.ifError(err, 'should not error');
+      });
+
+    setTimeout(function() {
+      kinesis.putRecords({
+        StreamName: testStreamName,
+        Records: subsequentRecords
+      }, function(err) {
+        if (err) throw err;
+      });
+    }, 500);
+  }
+
+  kinesis.putRecords({
+    StreamName: testStreamName,
+    Records: initialRecords
+  }, function(err) {
+    if (err) throw err;
+    readRecords();
+  });
+});

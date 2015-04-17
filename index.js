@@ -22,13 +22,17 @@ module.exports = function(config) {
   });
 
   util.inherits(KinesisReadable, stream.Readable);
-  function KinesisReadable(shardId) {
+  function KinesisReadable(options) {
+    options = options || {};
+
     this.streamName = config.streamName;
-    this.shardId = shardId;
+    this.shardId = options.shardId;
     this.kinesis = kinesis;
     this.iterator = null;
     this.pending = 0;
     this._closed = false;
+    this._latest = !!options.latest;
+
     stream.Readable.call(this, { objectMode: true });
   }
 
@@ -100,12 +104,20 @@ module.exports = function(config) {
         _this.shardId = data.StreamDescription.Shards[0].ShardId;
       }
 
-      kinesis.getShardIterator({
+      var params = {
         StreamName: _this.streamName,
         ShardId: _this.shardId,
         ShardIteratorType: 'AT_SEQUENCE_NUMBER',
         StartingSequenceNumber: data.StreamDescription.Shards[0].SequenceNumberRange.StartingSequenceNumber
-      }, function(err, data) {
+      };
+
+      if (_this._latest) {
+        params.ShardIteratorType = 'LATEST';
+        delete params.StartingSequenceNumber;
+        _this._latest = false;
+      }
+
+      kinesis.getShardIterator(params, function(err, data) {
         if (err) return callback(err);
         if (_this.drain) return callback();
         _this.iterator = data.ShardIterator;

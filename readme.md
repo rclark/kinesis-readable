@@ -14,9 +14,9 @@ var config = {
 
 var Readable = require('kinesis-readable')(config);
 
-// Optionally, you can specify a shardId, when creating the readable stream,
+// Optionally, you can specify a shardId via options when creating the readable stream,
 // otherwise it'll just read the first shard returned in a describeStream request
-var readable = new Readable();
+var readable = new Readable(options);
 
 readable
   // 'data' events will trigger for each record in the stream
@@ -38,3 +38,17 @@ setTimeout(function() {
   readable.close();
 }, 60 * 60 * 1000);
 ```
+
+## Options
+
+You can pass options to create the readable stream, all parameters are optional:
+
+```js
+var options = {
+  shardId: 'shard-identifier', // default to first shard in the stream
+  latest: true // default to false
+};
+```
+
+- **shardId** allows you to specify which shard in your stream to read from
+- **latest** if true, begins reading records written to the stream *after* reading begins. Use this to ignore records written to the stream before you started listening.
