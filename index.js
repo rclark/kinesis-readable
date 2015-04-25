@@ -30,7 +30,6 @@ module.exports = function(config) {
     this.kinesis = kinesis;
     this.iterator = null;
     this.pending = 0;
-    this._closed = false;
     this._latest = !!options.latest;
 
     stream.Readable.call(this, { objectMode: true });
@@ -39,15 +38,11 @@ module.exports = function(config) {
   KinesisReadable.prototype.close = function(callback) {
     callback = callback || function() {};
     var _this = this;
-    if (_this._closed) return callback();
 
     _this.drain = true;
     if (_this.pending) return setImmediate(_this.close.bind(_this), callback);
 
-    _this.on('end', function() {
-      _this._closed = true;
-      callback();
-    });
+    _this.once('end', callback);
 
     _this.push(null);
     _this.resume();
