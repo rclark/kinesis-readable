@@ -30,8 +30,8 @@ module.exports = function(config) {
     this.kinesis = kinesis;
     this.iterator = null;
     this.pending = 0;
-    this._latest = !!options.latest;
-    this._limit = Math.min(10000, options.limit) || 1;
+    this.latest = !!options.latest;
+    this.limit = Math.min(10000, options.limit) || 1;
 
     stream.Readable.call(this, { objectMode: true });
   }
@@ -62,7 +62,7 @@ module.exports = function(config) {
       _this.pending++;
       kinesis.getRecords({
         ShardIterator: _this.iterator,
-        Limit: _this._limit
+        Limit: _this.limit
       }, function(err, data) {
         _this.pending--;
         if (err) return _this.emit('error', err);
@@ -107,10 +107,10 @@ module.exports = function(config) {
         StartingSequenceNumber: data.StreamDescription.Shards[0].SequenceNumberRange.StartingSequenceNumber
       };
 
-      if (_this._latest) {
+      if (_this.latest) {
         params.ShardIteratorType = 'LATEST';
         delete params.StartingSequenceNumber;
-        _this._latest = false;
+        _this.latest = false;
       }
 
       kinesis.getShardIterator(params, function(err, data) {
