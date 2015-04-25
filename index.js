@@ -31,6 +31,7 @@ module.exports = function(config) {
     this.iterator = null;
     this.pending = 0;
     this._latest = !!options.latest;
+    this._limit = Math.min(10000, options.limit) || 1;
 
     stream.Readable.call(this, { objectMode: true });
   }
@@ -61,7 +62,7 @@ module.exports = function(config) {
       _this.pending++;
       kinesis.getRecords({
         ShardIterator: _this.iterator,
-        Limit: 1
+        Limit: _this._limit
       }, function(err, data) {
         _this.pending--;
         if (err) return _this.emit('error', err);
