@@ -66,10 +66,12 @@ test('reads records that already exist', function(assert) {
     var count = 0;
 
     readable
-      .on('data', function(record) {
+      .on('data', function(recordSet) {
+        assert.equal(recordSet.length, 1, 'default limit of 1');
+        var record = recordSet[0];
         var expected = records[count].Data.toString('hex');
         assert.equal(record.Data.toString('hex'), expected, 'anticipated data');
-        count++;
+        count += recordSet.length;
         if (count > records.length) assert.fail('should not read extra records');
         if (count === records.length) readable.close();
       })
@@ -100,10 +102,12 @@ test('reads records that are incoming', function(assert) {
   var readable = new Readable();
   var count = 0;
 
-  readable.on('data', function(record) {
+  readable.on('data', function(recordSet) {
+    assert.equal(recordSet.length, 1, 'default limit of 1');
+    var record = recordSet[0];
     var expected = records[count].Data.toString('hex');
     assert.equal(record.Data.toString('hex'), expected, 'anticipated data');
-    count++;
+    count += recordSet.length;
     if (count > records.length) assert.fail('Too many records received');
     if (count === records.length) readable.close();
   })
@@ -141,10 +145,12 @@ test('reads latest records', function(assert) {
     var count = 0;
 
     readable
-      .on('data', function(record) {
+      .on('data', function(recordSet) {
+        assert.equal(recordSet.length, 1, 'default limit of 1');
+        var record = recordSet[0];
         var expected = subsequentRecords[count].Data.toString('hex');
         assert.equal(record.Data.toString('hex'), expected, 'anticipated data');
-        count++;
+        count += recordSet.length;
         if (count > subsequentRecords.length) assert.fail('should not read extra records');
         if (count === subsequentRecords.length) readable.close();
       })
@@ -168,6 +174,77 @@ test('reads latest records', function(assert) {
   kinesis.putRecords({
     StreamName: testStreamName,
     Records: initialRecords
+  }, function(err) {
+    if (err) throw err;
+    readRecords();
+  });
+});
+
+test('emits checkpoints', function(assert) {
+  var records = [];
+  for (var i = 0; i < 20; i++) records.push({
+    Data: crypto.randomBytes(10),
+    PartitionKey: 'key'
+  });
+
+  var count = 0;
+  var readable = new Readable();
+  readable
+    .on('data', function(recordSet) {
+      count += recordSet.length;
+      if (count > records.length) assert.fail('should not read extra records');
+      if (count === records.length) readable.close();
+    })
+    .on('checkpoint', function(sequenceNum) {
+      assert.ok(sequenceNum, 'emits sequence number to checkpoint event');
+    })
+    .on('end', function() {
+      assert.end();
+    })
+    .on('error', function(err) {
+      assert.ifError(err, 'should not error');
+    });
+
+  kinesis.putRecords({
+    StreamName: testStreamName,
+    Records: records
+  }, function(err) {
+    if (err) throw err;
+  });
+});
+
+test('getrecords limits', function(assert) {
+  var records = [];
+  for (var i = 0; i < 20; i++) records.push({
+    Data: crypto.randomBytes(10),
+    PartitionKey: 'key'
+  });
+
+  function readRecords() {
+    assert.plan(3);
+    var readable = new Readable({ limit: 10 });
+    var count = 0;
+
+    readable
+      .on('data', function(recordSet) {
+        count += recordSet.length;
+        if (count > records.length) assert.fail('should not read extra records');
+        if (count === records.length) readable.close();
+      })
+      .on('checkpoint', function() {
+        assert.pass('checkpointed');
+      })
+      .on('end', function() {
+        assert.pass('ended');
+      })
+      .on('error', function(err) {
+        assert.ifError(err, 'should not error');
+      });
+  }
+
+  kinesis.putRecords({
+    StreamName: testStreamName,
+    Records: records
   }, function(err) {
     if (err) throw err;
     readRecords();

@@ -69,13 +69,12 @@ module.exports = function(config) {
 
         _this.iterator = data.NextShardIterator;
 
-        if (!data.Records.length) setImmediate(function() {
+        if (!data.Records.length) return setImmediate(function() {
           _this._read();
         });
 
-        data.Records.forEach(function(record) {
-          _this.push(record);
-        });
+        _this.push(data.Records);
+        _this.emit('checkpoint', data.Records.pop().SequenceNumber);
       });
     }
   };
