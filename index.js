@@ -3,8 +3,8 @@ var stream = require('stream');
 var util = require('util');
 
 // required config:
-// - streamName
-// - streamRegion
+// - name
+// - region
 //
 // optional config:
 // - endpoint
@@ -18,14 +18,14 @@ module.exports = function(config) {
     accessKeyId: config.accessKeyId,
     secretAccessKey: config.secretAccessKey,
     sessionToken: config.sessionToken,
-    region: config.streamRegion
+    region: config.region
   });
 
   util.inherits(KinesisReadable, stream.Readable);
   function KinesisReadable(options) {
     options = options || {};
 
-    this.streamName = config.streamName;
+    this.name = config.name;
     this.shardId = options.shardId;
     this.kinesis = kinesis;
     this.iterator = null;
@@ -84,7 +84,7 @@ module.exports = function(config) {
     if (_this.drain) return callback();
 
     _this.kinesis.describeStream({
-      StreamName: _this.streamName
+      StreamName: _this.name
     }, function(err, data) {
       if (err) return callback(err);
       if (_this.drain) return callback();
@@ -100,7 +100,7 @@ module.exports = function(config) {
       }
 
       var params = {
-        StreamName: _this.streamName,
+        StreamName: _this.name,
         ShardId: _this.shardId,
         ShardIteratorType: 'AT_SEQUENCE_NUMBER',
         StartingSequenceNumber: data.StreamDescription.Shards[0].SequenceNumberRange.StartingSequenceNumber
