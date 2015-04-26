@@ -31,6 +31,7 @@ module.exports = function(config) {
     this.iterator = null;
     this.pending = 0;
     this.latest = !!options.latest;
+    this.lastCheckpoint = options.lastCheckpoint;
     this.limit = Math.min(10000, options.limit) || 1;
 
     stream.Readable.call(this, { objectMode: true });
@@ -110,6 +111,12 @@ module.exports = function(config) {
         params.ShardIteratorType = 'LATEST';
         delete params.StartingSequenceNumber;
         _this.latest = false;
+      }
+
+      if (_this.lastCheckpoint) {
+        params.ShardIteratorType = 'AFTER_SEQUENCE_NUMBER';
+        params.StartingSequenceNumber = _this.lastCheckpoint;
+        _this.lastCheckpoint = false;
       }
 
       kinesis.getShardIterator(params, function(err, data) {

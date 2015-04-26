@@ -18,8 +18,8 @@ var kinesis = new AWS.Kinesis({
 var testStreamName = 'test-stream';
 
 var Readable = require('..')({
-  streamName: testStreamName,
-  streamRegion: 'fake',
+  name: testStreamName,
+  region: 'fake',
   accessKeyId: 'fake',
   secretAccessKey: 'fake',
   endpoint: 'http://localhost:7654'
@@ -248,5 +248,43 @@ test('getrecords limits', function(assert) {
   }, function(err) {
     if (err) throw err;
     readRecords();
+  });
+});
+
+test('reads after checkpoint', function(assert) {
+  var records = [];
+  for (var i = 0; i < 20; i++) records.push({
+    Data: crypto.randomBytes(10),
+    PartitionKey: 'key'
+  });
+
+  function readRecords(startAfter) {
+    var readable = new Readable({ lastCheckpoint: startAfter });
+    var count = 10; // should start at the 10th record and read 10 more
+
+    readable
+      .on('data', function(recordSet) {
+        assert.equal(recordSet.length, 1, 'default limit of 1');
+        var record = recordSet[0];
+        var expected = records[count].Data.toString('hex');
+        assert.equal(record.Data.toString('hex'), expected, 'anticipated data');
+        count += recordSet.length;
+        if (count > records.length) assert.fail('should not read extra records');
+        if (count === records.length) readable.close();
+      })
+      .on('end', function() {
+        assert.end();
+      })
+      .on('error', function(err) {
+        assert.ifError(err, 'should not error');
+      });
+  }
+
+  kinesis.putRecords({
+    StreamName: testStreamName,
+    Records: records
+  }, function(err, resp) {
+    if (err) throw err;
+    readRecords(resp.Records[9].SequenceNumber);
   });
 });
