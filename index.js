@@ -22,6 +22,12 @@ module.exports = function(config) {
   });
 
   util.inherits(KinesisReadable, stream.Readable);
+
+  // Optional:
+  // - shardId: to read from
+  // - latest: to only read records written after you start listening
+  // - lastCheckpoint: start reading the record after the given sequence number
+  // - limit: max number of records that will be passed to `data` event
   function KinesisReadable(options) {
     options = options || {};
 
