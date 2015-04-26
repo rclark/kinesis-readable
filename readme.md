@@ -22,6 +22,11 @@ readable
   .on('data', function(records) {
     console.log(records);
   })
+  // each time a GetRecords request is made, the 'checkpoint' event will provide
+  // the last sequence number that has been read
+  .on('checkpoint', function(sequenceNumber) {
+    console.log(sequenceNumber);
+  })
   .on('error', function(err) {
     console.error(err);
   })
