@@ -1,6 +1,6 @@
 {
   "name": "kinesis-readable",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Simple readable stream client for AWS Kinesis",
   "main": "index.js",
   "scripts": {
