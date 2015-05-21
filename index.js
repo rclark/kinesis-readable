@@ -81,7 +81,7 @@ module.exports = function(config) {
         });
 
         _this.push(data.Records);
-        _this.emit('checkpoint', data.Records.pop().SequenceNumber);
+        _this.emit('checkpoint', data.Records.slice(-1)[0].SequenceNumber);
       });
     }
   };
