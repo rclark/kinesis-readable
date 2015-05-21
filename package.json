@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/rclark/kinesis-readable",
   "devDependencies": {
-    "kinesalite": "^1.0.3",
+    "kinesalite": "1.0.3",
     "queue-async": "^1.0.7",
     "tape": "^3.5.0"
   },
