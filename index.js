@@ -37,6 +37,7 @@ module.exports = function(config) {
     this.iterator = null;
     this.pending = 0;
     this.latest = !!options.latest;
+    this.trimHorizon = !!options.trimHorizon;
     this.lastCheckpoint = options.lastCheckpoint;
     this.limit = Math.min(10000, options.limit) || 1;
 
@@ -112,6 +113,11 @@ module.exports = function(config) {
         ShardIteratorType: 'AT_SEQUENCE_NUMBER',
         StartingSequenceNumber: data.StreamDescription.Shards[0].SequenceNumberRange.StartingSequenceNumber
       };
+
+      if (_this.trimHorizon) {
+        params.ShardIteratorType = 'TRIM_HORIZON';
+        delete params.StartingSequenceNumber;
+      }
 
       if (_this.latest) {
         params.ShardIteratorType = 'LATEST';
