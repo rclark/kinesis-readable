@@ -1,6 +1,7 @@
 var AWS = require('aws-sdk');
 var stream = require('stream');
 var util = require('util');
+var ms = require('ms');
 
 // required config:
 // - name
@@ -37,8 +38,12 @@ module.exports = function(config) {
     this.iterator = null;
     this.pending = 0;
     this.latest = !!options.latest;
+    this.trimHorizon = !!options.trimHorizon;
     this.lastCheckpoint = options.lastCheckpoint;
     this.limit = Math.min(10000, options.limit) || 1;
+
+    var readsEvery = (options.readsEvery || 0);
+    this.readsEvery = typeof readsEvery === 'string' ? ms(readsEvery) : readsEvery;
 
     stream.Readable.call(this, { objectMode: true });
   }
@@ -80,7 +85,11 @@ module.exports = function(config) {
           _this._read();
         });
 
-        _this.push(data.Records);
+        //delay pushing to the underlying stream to hitting Kinesis limit
+        setTimeout(function () {
+          _this.push(data.Records);
+        }, _this.readsEvery);
+
         _this.emit('checkpoint', data.Records.slice(-1)[0].SequenceNumber);
       });
     }
@@ -112,6 +121,11 @@ module.exports = function(config) {
         ShardIteratorType: 'AT_SEQUENCE_NUMBER',
         StartingSequenceNumber: data.StreamDescription.Shards[0].SequenceNumberRange.StartingSequenceNumber
       };
+
+      if (_this.trimHorizon) {
+        params.ShardIteratorType = 'TRIM_HORIZON';
+        delete params.StartingSequenceNumber;
+      }
 
       if (_this.latest) {
         params.ShardIteratorType = 'LATEST';
