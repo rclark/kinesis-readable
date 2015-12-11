@@ -21,11 +21,11 @@
   },
   "homepage": "https://github.com/rclark/kinesis-readable",
   "devDependencies": {
-    "kinesalite": "1.0.3",
+    "kinesalite": "^1.10.1",
     "queue-async": "^1.0.7",
-    "tape": "^3.5.0"
+    "tape": "^4.2.2"
   },
   "dependencies": {
-    "aws-sdk": "^2.1.16"
+    "aws-sdk": "^2.2.22"
   }
 }
