@@ -7,22 +7,20 @@ Node.js stream interface for reading records from [AWS Kinesis](http://aws.amazo
 ## Usage
 
 ```js
-var config = {
-  name: 'my-stream',
-  region: 'my-region'
-};
+var AWS = new AWS.Kinesis({
+  region: 'us-east-1',
+  params: { StreamName: 'my-stream' }
+});
 
-var Readable = require('kinesis-readable')(config);
-
-// See below for options
-var readable = new Readable(options);
+// see below for options
+var readable = require('kinesis-readable')(client, options);
 
 readable
   // 'data' events will trigger for a set of records in the stream
   .on('data', function(records) {
     console.log(records);
   })
-  // each time a GetRecords request is made, the 'checkpoint' event will provide
+  // each time a records are passed downstream, the 'checkpoint' event will provide
   // the last sequence number that has been read
   .on('checkpoint', function(sequenceNumber) {
     console.log(sequenceNumber);
@@ -49,14 +47,10 @@ You can pass options to create the readable stream, all parameters are optional:
 
 ```js
 var options = {
-  shardId: 'shard-identifier', // default to first shard in the stream
-  latest: true, // default to false
-  lastCheckpoint: '12345678901234567890', // start reading after this sequence number
-  limit: 100 // default to 1
+  shardId: 'shard-identifier', // defaults to first shard in the stream
+  iterator: 'LATEST', // default to TRIM_HORIZON
+  startAfter: '12345678901234567890', // start reading after this sequence number
+  startAt: '12345678901234567890', // start reading from this sequence number
+  limit: 100 // number of records per `data` event
 };
 ```
-
-- **shardId** allows you to specify which shard in your stream to read from
-- **latest** if true, begins reading records written to the stream *after* reading begins. Use this to ignore records written to the stream before you started listening.
-- **lastCheckpoint** pass a sequence number and the stream will start reading from the next record
-- **limit** allows you to set the maximum number of records that will be passed to any single `data` event
