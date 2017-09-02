@@ -18,6 +18,7 @@ module.exports = KinesisReadable;
  * @param {string} [options.startAfter] - a sequence number to start reading after.
  * @param {number} [options.limit] - the maximum number of records that will
  * be passed to any single `data` event.
+ * @param {number} [options.readInterval] - time in ms to wait between getRecords API calls
  * @returns {KinesisClient} a readable stream of kinesis records
  */
 function KinesisReadable(client, name, options) {
@@ -103,7 +104,7 @@ function KinesisReadable(client, name, options) {
       iterator = data.NextShardIterator;
 
       if (!data.Records.length) {
-        if (!drain) return setTimeout(read, 200, callback);
+        if (!drain) return setTimeout(read, options.readInterval || 500, callback);
         data.Records = null;
       }
 
@@ -121,7 +122,7 @@ function KinesisReadable(client, name, options) {
 
     function gotRecords(err, data) {
       if (err) return checkpoint.emit('error', err);
-      setTimeout(readable.push.bind(readable), 200, data.Records);
+      setTimeout(readable.push.bind(readable), options.readInterval || 500, data.Records);
     }
   };
 
