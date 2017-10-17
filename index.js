@@ -16,6 +16,7 @@ module.exports = KinesisReadable;
  * If unspecified, defaults to `TRIM_HORIZON`
  * @param {string} [options.startAt] - a sequence number to start reading from.
  * @param {string} [options.startAfter] - a sequence number to start reading after.
+ * @param {number} [options.timestamp] - a timestamp to start reading after.
  * @param {number} [options.limit] - the maximum number of records that will
  * be passed to any single `data` event.
  * @param {number} [options.readInterval] - time in ms to wait between getRecords API calls
@@ -76,6 +77,9 @@ function KinesisReadable(client, name, options) {
     } else if (options.startAfter) {
       params.ShardIteratorType = 'AFTER_SEQUENCE_NUMBER';
       params.StartingSequenceNumber = options.startAfter;
+    } else if (options.timestamp) {
+      params.ShardIteratorType = 'AT_TIMESTAMP';
+      params.Timestamp = options.timestamp;
     } else {
       params.ShardIteratorType = 'TRIM_HORIZON';
     }
